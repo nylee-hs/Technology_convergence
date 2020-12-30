@@ -1,5 +1,6 @@
 from DataInput import Configuration, DataInput
 from topicModeling import LDABuilder, LDAEvaluator
+from doc2vec_eval import Doc2VecModeler, Doc2VecEvaluator
 import pandas as pd
 import logging
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
@@ -14,7 +15,10 @@ def main():
         print('==== 4. Topic Modeling(evaluation)   ====')
         print('==== 5. All                          ====')
         print('==== 6. Get Documents by Topic ID    ====')
-        print('==== 7. END                          ====')
+        print('==== 7. Doc2Vec_modeling             ====')
+        print('==== 8. Doc2Vec_evaluation           ====')
+        print('==== 9. Mean                         ====')
+        print('==== 10. END                         ====')
         print('=========================================')
 
         choice = input('  >> select number:  ')
@@ -142,9 +146,23 @@ def main():
             model = LDAEvaluator(config=config)
             topic_id = input(' >>> input topic ID: ')
             patents = model.show_topic_docs(topic_id=int(topic_id), topn=10)
-            print(patents)
+            for patent in patents:
+                print(patent)
 
         elif choice == '7':
+            inputdata = DataInput(config)
+            Doc2VecModeler(config=config, tagged_doc=inputdata.tagged_doc_)
+        elif choice == '8':
+            model = Doc2VecEvaluator(config=config)
+            df = model.get_similarity(model)
+
+        elif choice == '9':
+            df = pd.read_csv(config.model_path+config.data_file_name+'_sim_matrix.csv', encoding='utf-8-sig')
+            df = df[:1481, 1481:]
+            print(df.mean())
+
+
+        elif choice == '10':
             break
 
 if __name__=='__main__':

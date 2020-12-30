@@ -230,7 +230,6 @@ class LDAEvaluator:
         return topic_dict
 
     def show_topic_docs(self, topic_id, topn=10):
-        print(len(self.all_topics[25]))
         return self.all_topics[topic_id][:topn]
 
     def show_topic_words(self, topic_id, topn=10):

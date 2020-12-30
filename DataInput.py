@@ -1,4 +1,6 @@
 import os.path
+
+from gensim.models.doc2vec import TaggedDocument
 from sklearn import preprocessing
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 import gensim
@@ -25,13 +27,13 @@ class Configuration:
         if filename is not None and date is not None:
             self.date = '1229'
             self.data_path = 'analysis/' + self.date + '/data/'
-            # self.model_path = self.date + '/model_doc2vec/'
+            self.model_path = 'analysis/' + self.date + '/model_doc2vec/'
             self.tm_model_path = 'analysis/' + self.date + '/model_tm/'
             self.data_file_name = 'patent_' + filename
         else:
             self.date = '1229'
             self.data_path = 'analysis/' + self.date + '/data/'
-            # self.model_path = self.date + '/model_doc2vec/'
+            self.model_path = 'analysis/' + self.date + '/model_doc2vec/'
             self.tm_model_path = 'analysis/' + self.date + '/model_tm/'
             self.data_file_name = self.get_file_name()
             # self.factor = self.get_factor()
@@ -53,6 +55,7 @@ class DataInput:
         self.data_path = config.data_path
         self.file_name = config.data_file_name
         self.document_title, self.abstracts = self.pre_prosseccing()
+        self.tagged_doc_ = self.make_tag_document()
 
 
     def make_ngram(self, text, n):  ## n == 3 --> trigram, n==2 --> bigram
@@ -124,11 +127,48 @@ class DataInput:
             texts_out.append(sent)
         return texts_out
 
+    def make_tag_document(self, both=False, size_1 = None, size_2 = None):
+        if both == False:
+            tagged_doc = []
+            i = 0
+            print(f'job_id size = {len(self.document_title)}')
+            for i in range(len(self.document_title)):
+                tokens = self.abstracts[i]
+                doc = TaggedDocument(words=tokens, tags=[f'{self.file_name}_{i}'])
+                tagged_doc.append(doc)
+                i += 1
+            with open(self.data_path + self.file_name + '.tag_doc', 'wb') as f:
+                pickle.dump(tagged_doc, f)
+            return tagged_doc
+        elif both == True and size_1 is not None and size_2 is not None:
+            tagged_doc = []
+            i = 0
+            file_1 = input('  >>> first file : ')
+            file_2 = input('  >>> second file : ')
+            print(f'job_id size = {len(self.document_title)}')
+            for i in range(size_1):
+                tokens = self.abstracts[i]
+                doc = TaggedDocument(words=tokens, tags=[f'{file_1}_{i}'])
+                tagged_doc.append(doc)
+                i += 1
+            for i in range(size_1, size_2):
+                tokens = self.abstracts[i]
+                doc = TaggedDocument(words=tokens, tags=[f'{file_2}_{i}'])
+                tagged_doc.append(doc)
+                i += 1
+            with open(self.data_path + self.file_name + '.tag_doc', 'wb') as f:
+                pickle.dump(tagged_doc, f)
+            return tagged_doc
+
     def pre_prosseccing(self):
         print('==== Preprocessing ====')
         data = pd.read_csv(self.data_path+self.file_name+'.csv', encoding='utf-8')
+        issue_date = data['issueDate'] >= 20100000
+        data = data[issue_date]
+
             # (file=self.data_path + self.data_file_name+'.csv', encoding='utf-8')
         abstract_texts = data['abstract'].tolist()
+        print(len(abstract_texts))
         with open(self.data_path + 'data_result/'+  self.file_name+'.documents', 'wb') as f:
             pickle.dump(abstract_texts, f)
         sentences = self.data_text_cleansing(abstract_texts)
@@ -141,6 +181,6 @@ class DataInput:
         with open(self.data_path + 'data_result/'+self.file_name+'.corpus', 'wb') as f:
             pickle.dump(bigram, f)
 
-        document_id = data['patentTitle']
+        document_titles = data['patentTitle']
         print('=== end preprocessing ===')
-        return document_id, bigram
+        return document_titles, bigram
